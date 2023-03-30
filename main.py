@@ -1,6 +1,5 @@
 import heapq
 import random
-import numpy as np
 
 
 class Item:
@@ -257,7 +256,7 @@ class BranchAndBound:
 class GeneticAlgorithm:
     def __init__(self, problem: Problem):
         self.problem = problem
-        self.population = 700
+        self.population = 1000
         self.N = problem.number_of_item
 
     def random_population(self):
@@ -283,19 +282,13 @@ class GeneticAlgorithm:
                     temp.add(p.initial_item_list[j].class_item)
             population_list[i][self.N] = v if w <= p.capacity else 0
             population_list[i][self.N] += 10**len(temp)
-        # sort
-        for i in range(len(population_list)-1):
-            for j in range(i+1, len(population_list)):
-                if (population_list[j][self.N] > population_list[i][self.N]):
-                    population_list[j], population_list[i] = population_list[i], population_list[j]
-        return population_list
+        return sorted(population_list, key=lambda x: x[self.N], reverse=True)
 
     def cross_over(self, generation_list):
         for i in range(0, len(generation_list), 2):
-            new1 = generation_list[i][:self.N//2] + \
-                generation_list[i+1][self.N//2:]
-            new2 = generation_list[i+1][:self.N//2] + \
-                generation_list[i][self.N//2:]
+            slice = random.randint(1, self.N-2)
+            new1 = generation_list[i][:slice] + generation_list[i+1][slice:]
+            new2 = generation_list[i+1][:slice] + generation_list[i][slice:]
             new1[self.N] = 0
             new2[self.N] = 0
             generation_list.append(new1)
@@ -315,12 +308,20 @@ class GeneticAlgorithm:
     def solve_problem(self):
         current_generation = self.random_population()
         current_generation = self.fitness(current_generation)
-        for _ in range(500):
+        temp = current_generation[0][self.N]
+        cnt = 0
+        while cnt < 100:
             current_generation = current_generation[0:self.population//2]
             new_generation = self.cross_over(current_generation)
             new_generation = self.mutation(new_generation, self.population)
             current_generation = new_generation
             current_generation = self.fitness(current_generation)
+            if current_generation[0][self.N] != temp:
+                temp = current_generation[0][self.N]
+                cnt = 0
+            else:
+                cnt += 1
+
         # print solution
         ans = 0
         for i in range(self.N):
@@ -335,7 +336,7 @@ class GeneticAlgorithm:
 
 
 if __name__ == '__main__':
-    input_file_txt = "testcase5.txt"
+    input_file_txt = "testcase1.txt"
     # input_file_txt = "input1.txt"
     p = Problem(input_file_txt)
     opt = int(input(
@@ -346,9 +347,9 @@ if __name__ == '__main__':
         search.get_sorted_item_list()
         n = Node(1, 2, 10, [1, 1], [])
     # elif (opt == 2):
-    #     solution = 
+    #     solution =
     # elif (opt == 3):
-    #     solution = 
+    #     solution =
     elif (opt == 4):
         search = GeneticAlgorithm(p)
     s = ""
