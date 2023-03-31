@@ -2,15 +2,15 @@ import itertools
 
 
 class Item:
-    def __init__(self, weight: int, value: int, class_value: int):
+    def __init__(self, weight: int, value: int, class_item: int):
         self.weight = weight
         self.value = value
-        self.class_value = class_value
+        self.class_item = class_item
 
     def print(self):
         print("Weight of item :", self.weight)
         print("Value of item :", self.value)
-        print("Class of item :", self.class_value)
+        print("Class of item :", self.class_item)
 
 
 class Problem:
@@ -57,7 +57,7 @@ class BruteForce:
         check = set()
         for i in range(len(choice)):
             if choice[i]:
-                check.add(self.problem.item_list[i].class_value)
+                check.add(self.problem.item_list[i].class_item)
         if len(check) == self.problem.number_of_class: return True
         return False
 
