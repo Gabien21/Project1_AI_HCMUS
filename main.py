@@ -3,16 +3,17 @@ import heapq
 
 
 class Item:
-    def __init__(self, number, weight, value, c):
+    def __init__(self, weight: int, value: int, class_item: int, number = 0, state=0):
+        self.weight = weight
+        self.value = value
+        self.class_item = class_item
+        self.state = state
+        self.ratio = float(self.value) / self.weight
         self.n = number
-        self.w = weight
-        self.v = value
-        self.c = c
 
-    def __lt__(self, other):
-        if self.v == other.v:
-            return self.w < other.w
-        return self.v > other.v
+    def print_item_info(self):
+        print(
+            f"Weight:{self.weight}  Value:{self.value}  Class:{self.class_item}  Ratio:{self.ratio}  State:{self.state}")
 
 class Problem:
     def __init__(self, input_file):
@@ -32,7 +33,7 @@ class Problem:
         class_list = file.readline().strip("\n").split(", ")
         self.number_of_item = len(weight_list)
         for i in range(self.number_of_item):
-            self.initial_item_list.append(Item(i, int(weight_list[i]), int(value_list[i]), int(class_list[i])))
+            self.initial_item_list.append(Item(int(weight_list[i]), int(value_list[i]), int(class_list[i]), i))
 
 class local_beam_search:
     def __init__(self, problem, k, times):
@@ -58,23 +59,23 @@ class local_beam_search:
     def calc_items_weight(self, items):
         total_weight = 0
         for i in range (len(items)):
-            total_weight += items[i].w
+            total_weight += items[i].weight
         return total_weight
 
     def calc_items_value(self, items):
         total_value = 0
         for i in range (len(items)):
-            total_value += items[i].v
+            total_value += items[i].value
         return total_value
 
     def sort_items(self, items):
         for i in range(len(self.items)): #Sort list of item input
             for j in range(len(self.items) - i - 1):
-                if self.items[j].v == self.items[j+1].v:
-                    if self.items[j].w > self.items[j+1].w:
+                if self.items[j].value == self.items[j+1].value:
+                    if self.items[j].weight > self.items[j+1].weight:
                         self.items[j], self.items[j+1] = self.items[j+1], self.items[j]
                 else:
-                    if self.items[j].v < self.items[j+1].v:
+                    if self.items[j].value < self.items[j+1].value:
                         self.items[j], self.items[j + 1] = self.items[j + 1], self.items[j]
         return items
 
@@ -99,7 +100,7 @@ class local_beam_search:
         check = set()
         for i in range(len(items)):
             if items[i]:
-                check.add(items[i].c)
+                check.add(items[i].class_item)
         if len(check) == self.problem.number_of_class:
             return True
         return False
@@ -167,6 +168,6 @@ class local_beam_search:
         return None
 
 if __name__ == '__main__':
-    input_file_txt = "Test_case0.txt"
+    input_file_txt = "testcase2.txt"
     p = Problem(input_file_txt)
-    search3 = local_beam_search(p, 2, 40)
+    search3 = local_beam_search(p, 2, 80)
