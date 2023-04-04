@@ -62,7 +62,8 @@ class Problem:
         file.close()
         self.number_of_item = len(self.weight_list)
         for i in range(self.number_of_item):
-            self.initial_item_list.append(Item(int(self.weight_list[i]), int(self.value_list[i]), int(self.class_list[i]), i))
+            self.initial_item_list.append(Item(int(self.weight_list[i]), int(
+                self.value_list[i]), int(self.class_list[i]), i))
 
     def print_problem_info(self):
         print("Capacity:", self.capacity)
@@ -87,14 +88,16 @@ class BranchAndBound:
     def __init__(self, problem: Problem):
         self.problem = problem
         self.sorted_item_list: list[Item] = []
-        self.class_oder: list[list[int]] = [[] for _ in range(problem.number_of_class)]
+        self.class_oder: list[list[int]] = [[]
+                                            for _ in range(problem.number_of_class)]
         self.get_sorted_item_list()
 
     # Sap xep cac Item theo thu tu giam dan cua ti le ratio = vale/weight
     def get_sorted_item_list(self):
-        max_weight = max(self.problem.initial_item_list, key=lambda item: item.weight).weight
+        max_weight = max(self.problem.initial_item_list,
+                         key=lambda item: item.weight).weight
         self.sorted_item_list = sorted(self.problem.initial_item_list, reverse=True,
-                                       key=lambda item: (item.ratio, max_weight - item.weight)) # neu ti le ratio bang nhau thi sap xep Item giam dan theo weight
+                                       key=lambda item: (item.ratio, max_weight - item.weight))  # neu ti le ratio bang nhau thi sap xep Item giam dan theo weight
         # Lay ra danh sach vi tri cac Item cua tung class trong list da sap xep
         for i in range(self.problem.number_of_item):
             self.class_oder[self.sorted_item_list[i].class_item-1].append(i)
@@ -114,7 +117,8 @@ class BranchAndBound:
         # Neu cac Item da xet (o do sau tu 0 den node.depth) chua xet day du tat ca cac class
         if len(node.active_class) < self.problem.number_of_class:
             tmp: list[int] = []  # list danh dau vi tri cua cac vat do chon
-            class_not_active = list(range(self.problem.number_of_class))    # list danh dau cac class cua xet
+            # list danh dau cac class cua xet
+            class_not_active = list(range(self.problem.number_of_class))
             for i in range(len(node.active_class)):
                 class_not_active.remove(i)
             # Uu tien them Item cua cac class chua duoc xet truoc
@@ -125,11 +129,13 @@ class BranchAndBound:
                     weight += self.sorted_item_list[i].weight
                     if weight > self.problem.capacity:
                         weight -= self.sorted_item_list[i].weight
-                        cost += (self.problem.capacity - weight) * self.sorted_item_list[i].ratio
+                        cost += (self.problem.capacity - weight) * \
+                            self.sorted_item_list[i].ratio
                         break
                     upper_bound += self.sorted_item_list[i].value
                     cost = upper_bound
-                    class_not_active.remove(self.sorted_item_list[i].class_item - 1)
+                    class_not_active.remove(
+                        self.sorted_item_list[i].class_item - 1)
                     tmp.append(i)
             # Sau khi xet du cac class  ma van con du weight thi tiep tuc them cac Item
             # chua duoc xet theo thu tu trong sorted_item_list
@@ -140,22 +146,27 @@ class BranchAndBound:
                     weight += self.sorted_item_list[i].weight
                     if weight > self.problem.capacity:
                         weight -= self.sorted_item_list[i].weight
-                        cost += (self.problem.capacity - weight) * self.sorted_item_list[i].ratio
+                        cost += (self.problem.capacity - weight) * \
+                            self.sorted_item_list[i].ratio
                         break
                     upper_bound += self.sorted_item_list[i].value
                     cost = upper_bound
-        else:  # Neu cac Item da xet (o do sau tu 0 den node.depth) da xet day du tat ca cac class
+        # Neu cac Item da xet (o do sau tu 0 den node.depth) da xet day du tat ca cac class
+        else:
             # Them cac Item chua duoc xet theo thu tu trong sorted_item_list
             for i in range(node.depth + 1, self.problem.number_of_item):
                 weight += self.sorted_item_list[i].weight
                 if weight > self.problem.capacity:
                     weight -= self.sorted_item_list[i].weight
-                    cost += (self.problem.capacity - weight) * self.sorted_item_list[i].ratio
+                    cost += (self.problem.capacity - weight) * \
+                        self.sorted_item_list[i].ratio
                     break
                 upper_bound += self.sorted_item_list[i].value
                 cost = upper_bound
-        node.upper, node.cost = -upper_bound, -cost  # Luu lai cost va upper_bound o dang so am
-        if -cost > upper:   # Kiem tra xem abs(cost) < abs(upper) hay khong, neu co thi prun node do
+        # Luu lai cost va upper_bound o dang so am
+        node.upper, node.cost = -upper_bound, -cost
+        # Kiem tra xem abs(cost) < abs(upper) hay khong, neu co thi prun node do
+        if -cost > upper:
             return False
         return True
 
@@ -165,7 +176,8 @@ class BranchAndBound:
         upper = 100000
         self.check_node(initial_state, upper)
         upper = initial_state.upper
-        my_queue: list[Node] = []   # chua cac node theo thu tu giam dan cua cost
+        # chua cac node theo thu tu giam dan cua cost
+        my_queue: list[Node] = []
         max_val = 0  # Luu lai solution tot nhat
         max_item: list[int] = []    # Luu lai solution tot nhat
         heapq.heappush(my_queue, initial_state)
@@ -189,16 +201,20 @@ class BranchAndBound:
             # xet xem class cua Item dang xet co duoc xet trong node curr hay chua,
             # Neu chua thi them vao cho node con lay item do
             if self.sorted_item_list[curr.depth + 1].class_item - 1 not in tmp3:
-                tmp3.append(self.sorted_item_list[curr.depth + 1].class_item - 1)
-            node1 = Node(curr.depth + 1, curr.current_weight, curr.current_value, tmp1, tmp3)  # Node con co lay Item
-            node2 = Node(curr.depth + 1, curr.current_weight, curr.current_value, tmp2, tmp4)  # Node con khong lay Item
+                tmp3.append(
+                    self.sorted_item_list[curr.depth + 1].class_item - 1)
+            node1 = Node(curr.depth + 1, curr.current_weight,
+                         curr.current_value, tmp1, tmp3)  # Node con co lay Item
+            node2 = Node(curr.depth + 1, curr.current_weight,
+                         curr.current_value, tmp2, tmp4)  # Node con khong lay Item
             l: list[Node] = []  # Mang luu lai node con khong bi pruned
             if self.check_node(node1, upper):
                 l.append(node1)
             if self.check_node(node2, upper):
                 l.append(node2)
             for c in l:
-                heapq.heappush(my_queue, c)  # Them cac node con khong bi pruned vao my_queue
+                # Them cac node con khong bi pruned vao my_queue
+                heapq.heappush(my_queue, c)
             for c in l:
                 # Trong cac node con, neu co upper lon hon upper toan cuc thi luu lai upper toan cuc
                 # Va prune di nhung node co cost > upper toan cuc vua thay doi do
@@ -219,43 +235,51 @@ class BranchAndBound:
             self.sorted_item_list[i].state = max_item[i]
         return max_val
 
-#Thuat toan Brute Force
+# Thuat toan Brute Force
+
+
 class BruteForce:
     def __init__(self, problem: Problem):
         self.problem = problem
-    #Ung voi moi lua chon , iem tra xem khoi luong cua cac vat duoc lay co lon hon khoi luong toi da ma tui co the chua duoc hay khong
+    # Ung voi moi lua chon , iem tra xem khoi luong cua cac vat duoc lay co lon hon khoi luong toi da ma tui co the chua duoc hay khong
+
     def isValid(self, choice) -> bool:
         temp = 0
         for i in range(len(choice)):
             if choice[i] == 1:
                 temp += self.problem.initial_item_list[i].weight
-            if temp > self.problem.capacity: return False
+            if temp > self.problem.capacity:
+                return False
         return True
-    #Tim gia tri cua tui ung voi cac vat duoc lua chon
+    # Tim gia tri cua tui ung voi cac vat duoc lua chon
+
     def findValue(self, choice) -> int:
         temp = 0
         for i in range(len(choice)):
             if choice[i] == 1:
                 temp += self.problem.initial_item_list[i].value
         return temp
-    #Kiem tra xem co du so luong class ung voi tung lua chon
+    # Kiem tra xem co du so luong class ung voi tung lua chon
+
     def checkEnoughClass(self, choice) -> bool:
         check = set()
         for i in range(len(choice)):
             if choice[i]:
                 check.add(self.problem.initial_item_list[i].class_item)
-        if len(check) == self.problem.number_of_class: return True
+        if len(check) == self.problem.number_of_class:
+            return True
         return False
-    #Tim gia tri cua tui ung voi cac vat duoc lua chon
+    # Tim gia tri cua tui ung voi cac vat duoc lua chon
+
     def findWeight(self, choice) -> int:
         temp = 0
         for i in range(len(choice)):
             if choice[i] == 1:
                 temp += self.problem.initial_item_list[i].weight
         return temp
-    
+
     def solve_problem(self):
-        #Sinh ra tat ca cac truong hop lua chon voi moi vat co 2 trang thai la 1 ( duoc lua chon ) hay 2 ( khong duoc lua chon)
+        # Sinh ra tat ca cac truong hop lua chon voi moi vat co 2 trang thai la 1 ( duoc lua chon ) hay 2 ( khong duoc lua chon)
         gen = [[0, 1] for _ in range(self.problem.number_of_item)]
         choice_list = list(itertools.product(*gen))
 
@@ -263,9 +287,9 @@ class BruteForce:
         chosen = None
         weight = 0
         for choice in choice_list:
-            #Ung voi moi lua chon , kiem tra so luong class va khoi luong cua cac vat duoc lay
+            # Ung voi moi lua chon , kiem tra so luong class va khoi luong cua cac vat duoc lay
             if self.checkEnoughClass(choice) and self.isValid(choice):
-                temp = self.findValue(choice) 
+                temp = self.findValue(choice)
                 if temp >= value:
                     value = temp
                     chosen = choice
@@ -278,7 +302,7 @@ class BruteForce:
 class GeneticAlgorithm:
     def __init__(self, problem: Problem):
         self.problem = problem
-        self.population = 1000
+        self.population = 1000 if problem.number_of_item < 100 else 5000
         self.N = problem.number_of_item
 
     def random_population(self):
@@ -302,8 +326,8 @@ class GeneticAlgorithm:
                     w += p.initial_item_list[j].weight
                     v += p.initial_item_list[j].value
                     temp.add(p.initial_item_list[j].class_item)
-            population_list[i][self.N] = v if w <= p.capacity else 0
-            population_list[i][self.N] += 10**len(temp)
+            population_list[i][self.N] = v + \
+                10**len(temp) if w <= p.capacity else 0
         return sorted(population_list, key=lambda x: x[self.N], reverse=True)
 
     def cross_over(self, generation_list):
@@ -354,6 +378,7 @@ class GeneticAlgorithm:
         if current_generation[0][self.N]-10**self.problem.number_of_class == ans:
             print(ans)
         else:
+            p.initial_item_list.clear()
             print("No solution!")
 
 
@@ -377,47 +402,56 @@ class local_beam_search:
         else:
             print("No solution")
 
-    def calc_items_weight(self, items): #Ham tinh tong khoi luong cua cac items trong danh sach
+    # Ham tinh tong khoi luong cua cac items trong danh sach
+    def calc_items_weight(self, items):
         total_weight = 0
-        for i in range (len(items)):
+        for i in range(len(items)):
             total_weight += items[i].weight
         return total_weight
 
-    def calc_items_value(self, items): #Ham tinh tong gia tri cua cac items trong danh sach
+    # Ham tinh tong gia tri cua cac items trong danh sach
+    def calc_items_value(self, items):
         total_value = 0
-        for i in range (len(items)):
+        for i in range(len(items)):
             total_value += items[i].value
         return total_value
 
-    def sort_items(self, items): #Ham sap xep cac item trong danh sach theo gia tri giam dan, neu cac item co cung gia tri thi sort theo khoi luong nho hon
-        for i in range(len(self.items)): 
+    def sort_items(self, items):  # Ham sap xep cac item trong danh sach theo gia tri giam dan, neu cac item co cung gia tri thi sort theo khoi luong nho hon
+        for i in range(len(self.items)):
             for j in range(len(self.items) - i - 1):
                 if self.items[j].value == self.items[j+1].value:
                     if self.items[j].weight > self.items[j+1].weight:
-                        self.items[j], self.items[j+1] = self.items[j+1], self.items[j]
+                        self.items[j], self.items[j +
+                                                  1] = self.items[j+1], self.items[j]
                 else:
                     if self.items[j].value < self.items[j+1].value:
-                        self.items[j], self.items[j + 1] = self.items[j + 1], self.items[j]
+                        self.items[j], self.items[j +
+                                                  1] = self.items[j + 1], self.items[j]
         return items
 
-    def sort_list_items(self, list_items): #Ham sap xep cac list item trong danh sách các list itemsitems
+    # Ham sap xep cac list item trong danh sách các list itemsitems
+    def sort_list_items(self, list_items):
         for i in range(len(list_items)):
-            for j in range (len(list_items)-i-1):
+            for j in range(len(list_items)-i-1):
                 if self.calc_items_value(list_items[j]) == self.calc_items_value(list_items[j+1]):
                     if self.calc_items_weight(list_items[j]) > self.calc_items_weight(list_items[j+1]):
-                        list_items[j], list_items[j+1] = list_items[j+1], list_items[j]
+                        list_items[j], list_items[j +
+                                                  1] = list_items[j+1], list_items[j]
                 else:
                     if self.calc_items_value(list_items[j]) < self.calc_items_value(list_items[j+1]):
-                        list_items[j], list_items[j + 1] = list_items[j + 1], list_items[j]
+                        list_items[j], list_items[j +
+                                                  1] = list_items[j + 1], list_items[j]
         return list_items
 
-    def check_in_list(self, items, item): #Kiem tra xem item da co trong danh sach hay chua
+    # Kiem tra xem item da co trong danh sach hay chua
+    def check_in_list(self, items, item):
         for i in range(len(items)):
             if item.n == items[i].n:
                 return True
         return False
 
-    def check_different_class(self, items): #Kiem tra xem cac item trong danh sach co thoa dieu kien moi class co it nhat 1 vatkhongkhong
+    # Kiem tra xem cac item trong danh sach co thoa dieu kien moi class co it nhat 1 vatkhongkhong
+    def check_different_class(self, items):
         check = set()
         for i in range(len(items)):
             if items[i]:
@@ -426,7 +460,8 @@ class local_beam_search:
             return True
         return False
 
-    def check_in_expanded(self, expanded, items): #Kiem tra xem danh sach cac items co trong list expanded chuachua
+    # Kiem tra xem danh sach cac items co trong list expanded chuachua
+    def check_in_expanded(self, expanded, items):
         for i in range(len(expanded)):
             expanded[i] = self.sort_items(expanded[i])
             count = 0
@@ -439,54 +474,71 @@ class local_beam_search:
                 return True
         return False
 
-    def find_pos_in_items(self, items, item): #Tim vi tri cua item trong danh sach items
+    # Tim vi tri cua item trong danh sach items
+    def find_pos_in_items(self, items, item):
         for i in range(len(items)):
             if items[i].n == item.n:
                 return i
         return None
 
     def solution(self):
-        frontier = [] #frontier la 1 danh sach ma moi phan tu cua no lai la danh sach cac items
+        frontier = []  # frontier la 1 danh sach ma moi phan tu cua no lai la danh sach cac items
         for i in range(len(self.items)):
             temp = []
             temp.append(self.items[i])
-            frontier.append(temp) 
-        frontier = self.sort_list_items(frontier) #Sap xep danh sach cac items
+            frontier.append(temp)
+        # Sap xep danh sach cac items
+        frontier = self.sort_list_items(frontier)
         beam = []
-        self.items = self.sort_items(self.items) #Sap xep cac items
+        self.items = self.sort_items(self.items)  # Sap xep cac items
         for i in range(self.k):
-            beam.append(frontier[i]) #Them b phan tu dau tien của frontier vao beam. Sau khi sort, cac phan tu dau tien cua beam cung la cac phan tu co gia tri nhatnhat
-        expanded = [] #Danh sach chua list cac items da duoc duyet
-        for k in range(self.times): #k chay tu 0 den so lan san xuat node moi
+            # Them b phan tu dau tien của frontier vao beam. Sau khi sort, cac phan tu dau tien cua beam cung la cac phan tu co gia tri nhatnhat
+            beam.append(frontier[i])
+        expanded = []  # Danh sach chua list cac items da duoc duyet
+        for k in range(self.times):  # k chay tu 0 den so lan san xuat node moi
             l = len(frontier)
             new_items = []
-            for i in range(len(beam)): 
-                for j in range(self.find_pos_in_items(beam[i], beam[i][len(beam[i])-1])+1, len(self.items)): #j chay tu vi tri cuoi cung cua phan tu den phan tu cuoi cung cua items
+            for i in range(len(beam)):
+                # j chay tu vi tri cuoi cung cua phan tu den phan tu cuoi cung cua items
+                for j in range(self.find_pos_in_items(beam[i], beam[i][len(beam[i])-1])+1, len(self.items)):
                     new_items = copy.deepcopy(beam[i])
-                    if self.check_in_list(beam[i], self.items[j]) == False: #Kiem tra xem item[j] co trong list beam[i] chua
-                        new_items.append(self.items[j]) #Luc nay new_items se chua beam[i] va items[j]
-                        if self.check_in_expanded(expanded, new_items) == False: #Kiem tra xem new_items co trong expanded chua
-                            if self.calc_items_weight(new_items) <= self.capacity: #Kiem tra tong khoi luong cua new_items voi khoi luong gioi han
-                                frontier.append(new_items) #Neu thoa dieu kien thi cho new_items vào frontier
+                    # Kiem tra xem item[j] co trong list beam[i] chua
+                    if self.check_in_list(beam[i], self.items[j]) == False:
+                        # Luc nay new_items se chua beam[i] va items[j]
+                        new_items.append(self.items[j])
+                        # Kiem tra xem new_items co trong expanded chua
+                        if self.check_in_expanded(expanded, new_items) == False:
+                            # Kiem tra tong khoi luong cua new_items voi khoi luong gioi han
+                            if self.calc_items_weight(new_items) <= self.capacity:
+                                # Neu thoa dieu kien thi cho new_items vào frontier
+                                frontier.append(new_items)
                             else:
                                 continue
-            frontier = self.sort_list_items(frontier) #Sort lai frontier
-            if len(frontier) == l: #Kiem tra xem co node nao duoc mo rong khong, neu do dai cua frontier khong thay doi nghia la khong co node nao duoc san xuat 
-                for i in range(self.k): 
-                    expanded.append(frontier.pop(0)) #Chuyen node dau cua frontier vao expanded
-                    expanded.append(beam.pop(0)) #Chuyen node dau cua beam vao expanded
-                    beam.append(frontier[i]) #Tiep tuc xet nhung danh sach co gia tri lon nhat cua frontier
-            else: #Co node moi duoc san xuat
-                for i in range(self.k): 
-                    expanded.append(beam.pop(0)) #Chuyen node dau cua beam vao expanded
-                    beam.append(frontier[i]) #Tiep tuc xet nhung danh sach co gia tri lon nhat cua frontier
+            frontier = self.sort_list_items(frontier)  # Sort lai frontier
+            if len(frontier) == l:  # Kiem tra xem co node nao duoc mo rong khong, neu do dai cua frontier khong thay doi nghia la khong co node nao duoc san xuat
+                for i in range(self.k):
+                    # Chuyen node dau cua frontier vao expanded
+                    expanded.append(frontier.pop(0))
+                    # Chuyen node dau cua beam vao expanded
+                    expanded.append(beam.pop(0))
+                    # Tiep tuc xet nhung danh sach co gia tri lon nhat cua frontier
+                    beam.append(frontier[i])
+            else:  # Co node moi duoc san xuat
+                for i in range(self.k):
+                    # Chuyen node dau cua beam vao expanded
+                    expanded.append(beam.pop(0))
+                    # Tiep tuc xet nhung danh sach co gia tri lon nhat cua frontier
+                    beam.append(frontier[i])
         for i in range(len(expanded)):
-            frontier.append(expanded[i]) #Them tat ca cac danh sach o trong expanded vao frontier de xet
+            # Them tat ca cac danh sach o trong expanded vao frontier de xet
+            frontier.append(expanded[i])
         frontier = self.sort_list_items(frontier)
         for i in range(len(frontier)):
-            if self.check_different_class(frontier[i]): #Kiem tra xem danh sach co thoa dieu kien moi class co it nhat 1 vat hay khong
-                return frontier[i] #Neu thoa thi tra ve danh sach do. Vi frontier da duoc sort nen danh sach nay là danh sach cac vat co tong gia tri lon nhat va thoa dieu kien
-        return None #Neu sau k lan san xuat node moi khong co danh sach nao thoa dieu kien thi tra ve 
+            # Kiem tra xem danh sach co thoa dieu kien moi class co it nhat 1 vat hay khong
+            if self.check_different_class(frontier[i]):
+                # Neu thoa thi tra ve danh sach do. Vi frontier da duoc sort nen danh sach nay là danh sach cac vat co tong gia tri lon nhat va thoa dieu kien
+                return frontier[i]
+        return None  # Neu sau k lan san xuat node moi khong co danh sach nao thoa dieu kien thi tra ve
 
 
 def generate_test_case(capacity: int, number_of_class: int, number_of_item: int):
@@ -519,8 +571,10 @@ if __name__ == '__main__':
     p = Problem(input_file_txt)
     p.print_problem_info()
     while True:
-        print("______________________________________________________________________________")
-        print("1/Brute Force\n2/Branch And Bound\n3/Local Beam\n4/Genetic Algorithm\n5/Stop")
+        print(
+            "______________________________________________________________________________")
+        print(
+            "1/Brute Force\n2/Branch And Bound\n3/Local Beam\n4/Genetic Algorithm\n5/Stop")
         option = int(input(
             "Enter your choice: "))
         s = ""
