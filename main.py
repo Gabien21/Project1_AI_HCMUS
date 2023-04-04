@@ -377,20 +377,20 @@ class local_beam_search:
         else:
             print("No solution")
 
-    def calc_items_weight(self, items):
+    def calc_items_weight(self, items): #Ham tinh tong khoi luong cua cac items trong danh sach
         total_weight = 0
         for i in range (len(items)):
             total_weight += items[i].weight
         return total_weight
 
-    def calc_items_value(self, items):
+    def calc_items_value(self, items): #Ham tinh tong gia tri cua cac items trong danh sach
         total_value = 0
         for i in range (len(items)):
             total_value += items[i].value
         return total_value
 
-    def sort_items(self, items):
-        for i in range(len(self.items)): #Sort list of item input
+    def sort_items(self, items): #Ham sap xep cac item trong danh sach theo gia tri giam dan, neu cac item co cung gia tri thi sort theo khoi luong nho hon
+        for i in range(len(self.items)): 
             for j in range(len(self.items) - i - 1):
                 if self.items[j].value == self.items[j+1].value:
                     if self.items[j].weight > self.items[j+1].weight:
@@ -400,7 +400,7 @@ class local_beam_search:
                         self.items[j], self.items[j + 1] = self.items[j + 1], self.items[j]
         return items
 
-    def sort_list_items(self, list_items):
+    def sort_list_items(self, list_items): #Ham sap xep cac list item trong danh sách các list itemsitems
         for i in range(len(list_items)):
             for j in range (len(list_items)-i-1):
                 if self.calc_items_value(list_items[j]) == self.calc_items_value(list_items[j+1]):
@@ -411,13 +411,13 @@ class local_beam_search:
                         list_items[j], list_items[j + 1] = list_items[j + 1], list_items[j]
         return list_items
 
-    def check_in_list(self, items, item):
+    def check_in_list(self, items, item): #Kiem tra xem item da co trong danh sach hay chua
         for i in range(len(items)):
             if item.n == items[i].n:
                 return True
         return False
 
-    def check_different_class(self, items):
+    def check_different_class(self, items): #Kiem tra xem cac item trong danh sach co thoa dieu kien moi class co it nhat 1 vatkhongkhong
         check = set()
         for i in range(len(items)):
             if items[i]:
@@ -426,7 +426,7 @@ class local_beam_search:
             return True
         return False
 
-    def check_in_expanded(self, expanded, items):
+    def check_in_expanded(self, expanded, items): #Kiem tra xem danh sach cac items co trong list expanded chuachua
         for i in range(len(expanded)):
             expanded[i] = self.sort_items(expanded[i])
             count = 0
@@ -439,54 +439,54 @@ class local_beam_search:
                 return True
         return False
 
-    def find_pos_in_items(self, items, item):
+    def find_pos_in_items(self, items, item): #Tim vi tri cua item trong danh sach items
         for i in range(len(items)):
             if items[i].n == item.n:
                 return i
         return None
 
     def solution(self):
-        frontier = []
+        frontier = [] #frontier la 1 danh sach ma moi phan tu cua no lai la danh sach cac items
         for i in range(len(self.items)):
             temp = []
             temp.append(self.items[i])
-            frontier.append(temp)
-        frontier = self.sort_list_items(frontier)
+            frontier.append(temp) 
+        frontier = self.sort_list_items(frontier) #Sap xep danh sach cac items
         beam = []
-        self.items = self.sort_items(self.items)
+        self.items = self.sort_items(self.items) #Sap xep cac items
         for i in range(self.k):
-            beam.append(frontier[i])
-        expanded = []
-        for k in range(self.times):
+            beam.append(frontier[i]) #Them b phan tu dau tien của frontier vao beam. Sau khi sort, cac phan tu dau tien cua beam cung la cac phan tu co gia tri nhatnhat
+        expanded = [] #Danh sach chua list cac items da duoc duyet
+        for k in range(self.times): #k chay tu 0 den so lan san xuat node moi
             l = len(frontier)
             new_items = []
-            for i in range(len(beam)):
-                for j in range(self.find_pos_in_items(beam[i], beam[i][len(beam[i])-1])+1, len(self.items)):
+            for i in range(len(beam)): 
+                for j in range(self.find_pos_in_items(beam[i], beam[i][len(beam[i])-1])+1, len(self.items)): #j chay tu vi tri cuoi cung cua phan tu den phan tu cuoi cung cua items
                     new_items = copy.deepcopy(beam[i])
-                    if self.check_in_list(beam[i], self.items[j]) == False:
-                        new_items.append(self.items[j])
-                        if self.check_in_expanded(expanded, new_items) == False:
-                            if self.calc_items_weight(new_items) <= self.capacity:
-                                frontier.append(new_items)
+                    if self.check_in_list(beam[i], self.items[j]) == False: #Kiem tra xem item[j] co trong list beam[i] chua
+                        new_items.append(self.items[j]) #Luc nay new_items se chua beam[i] va items[j]
+                        if self.check_in_expanded(expanded, new_items) == False: #Kiem tra xem new_items co trong expanded chua
+                            if self.calc_items_weight(new_items) <= self.capacity: #Kiem tra tong khoi luong cua new_items voi khoi luong gioi han
+                                frontier.append(new_items) #Neu thoa dieu kien thi cho new_items vào frontier
                             else:
                                 continue
-            frontier = self.sort_list_items(frontier)
-            if len(frontier) == l:
-                for i in range(self.k):
-                    expanded.append(frontier.pop(0))
-                    expanded.append(beam.pop(0))
-                    beam.append(frontier[i])
-            else:
-                for i in range(self.k):
-                    expanded.append(beam.pop(0))
-                    beam.append(frontier[i])
+            frontier = self.sort_list_items(frontier) #Sort lai frontier
+            if len(frontier) == l: #Kiem tra xem co node nao duoc mo rong khong, neu do dai cua frontier khong thay doi nghia la khong co node nao duoc san xuat 
+                for i in range(self.k): 
+                    expanded.append(frontier.pop(0)) #Chuyen node dau cua frontier vao expanded
+                    expanded.append(beam.pop(0)) #Chuyen node dau cua beam vao expanded
+                    beam.append(frontier[i]) #Tiep tuc xet nhung danh sach co gia tri lon nhat cua frontier
+            else: #Co node moi duoc san xuat
+                for i in range(self.k): 
+                    expanded.append(beam.pop(0)) #Chuyen node dau cua beam vao expanded
+                    beam.append(frontier[i]) #Tiep tuc xet nhung danh sach co gia tri lon nhat cua frontier
         for i in range(len(expanded)):
-            frontier.append(expanded[i])
+            frontier.append(expanded[i]) #Them tat ca cac danh sach o trong expanded vao frontier de xet
         frontier = self.sort_list_items(frontier)
         for i in range(len(frontier)):
-            if self.check_different_class(frontier[i]):
-                return frontier[i]
-        return None
+            if self.check_different_class(frontier[i]): #Kiem tra xem danh sach co thoa dieu kien moi class co it nhat 1 vat hay khong
+                return frontier[i] #Neu thoa thi tra ve danh sach do. Vi frontier da duoc sort nen danh sach nay là danh sach cac vat co tong gia tri lon nhat va thoa dieu kien
+        return None #Neu sau k lan san xuat node moi khong co danh sach nao thoa dieu kien thi tra ve 
 
 
 def generate_test_case(capacity: int, number_of_class: int, number_of_item: int):
