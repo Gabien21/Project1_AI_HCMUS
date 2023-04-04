@@ -219,11 +219,11 @@ class BranchAndBound:
             self.sorted_item_list[i].state = max_item[i]
         return max_val
 
-
+#Thuat toan Brute Force
 class BruteForce:
     def __init__(self, problem: Problem):
         self.problem = problem
-
+    #Ung voi moi lua chon , iem tra xem khoi luong cua cac vat duoc lay co lon hon khoi luong toi da ma tui co the chua duoc hay khong
     def isValid(self, choice) -> bool:
         temp = 0
         for i in range(len(choice)):
@@ -231,14 +231,14 @@ class BruteForce:
                 temp += self.problem.initial_item_list[i].weight
             if temp > self.problem.capacity: return False
         return True
-
+    #Tim gia tri cua tui ung voi cac vat duoc lua chon
     def findValue(self, choice) -> int:
         temp = 0
         for i in range(len(choice)):
             if choice[i] == 1:
                 temp += self.problem.initial_item_list[i].value
         return temp
-
+    #Kiem tra xem co du so luong class ung voi tung lua chon
     def checkEnoughClass(self, choice) -> bool:
         check = set()
         for i in range(len(choice)):
@@ -246,15 +246,16 @@ class BruteForce:
                 check.add(self.problem.initial_item_list[i].class_item)
         if len(check) == self.problem.number_of_class: return True
         return False
-
+    #Tim gia tri cua tui ung voi cac vat duoc lua chon
     def findWeight(self, choice) -> int:
         temp = 0
         for i in range(len(choice)):
             if choice[i] == 1:
                 temp += self.problem.initial_item_list[i].weight
         return temp
-
+    
     def solve_problem(self):
+        #Sinh ra tat ca cac truong hop lua chon voi moi vat co 2 trang thai la 1 ( duoc lua chon ) hay 2 ( khong duoc lua chon)
         gen = [[0, 1] for _ in range(self.problem.number_of_item)]
         choice_list = list(itertools.product(*gen))
 
@@ -262,8 +263,9 @@ class BruteForce:
         chosen = None
         weight = 0
         for choice in choice_list:
+            #Ung voi moi lua chon , kiem tra so luong class va khoi luong cua cac vat duoc lay
             if self.checkEnoughClass(choice) and self.isValid(choice):
-                temp = self.findValue(choice)
+                temp = self.findValue(choice) 
                 if temp >= value:
                     value = temp
                     chosen = choice
