@@ -4,6 +4,7 @@ import itertools
 import time
 import tracemalloc
 import copy
+import winsound
 
 
 class Item:
@@ -46,56 +47,77 @@ class Problem:
         self.capacity: int = 0
         self.number_of_class = 0
         self.number_of_item = 0
+        self.weight_list = ""
+        self.value_list = ""
+        self.class_list = ""
         self.read_file()
 
     def read_file(self):
         file = open(self.input_file, "r")
         self.capacity = float(file.readline().strip("\n"))
         self.number_of_class = int(file.readline().strip("\n"))
-        weight_list = file.readline().strip("\n").split(", ")
-        value_list = file.readline().strip("\n").split(", ")
-        class_list = file.readline().strip("\n").split(", ")
-        self.number_of_item = len(weight_list)
+        self.weight_list = file.readline().strip("\n").split(", ")
+        self.value_list = file.readline().strip("\n").split(", ")
+        self.class_list = file.readline().strip("\n").split(", ")
+        file.close()
+        self.number_of_item = len(self.weight_list)
         for i in range(self.number_of_item):
-            self.initial_item_list.append(Item(int(weight_list[i]), int(value_list[i]), int(class_list[i]), i))
+            self.initial_item_list.append(Item(int(self.weight_list[i]), int(self.value_list[i]), int(self.class_list[i]), i))
+
+    def print_problem_info(self):
+        print("Capacity:", self.capacity)
+        print("Number of class:", self.number_of_class)
+        print("Number of item:", self.number_of_item)
+        print("Weight list: ", end="")
+        for i in range(self.number_of_item):
+            print(self.weight_list[i], end=" ")
+        print()
+        print("Value list: ", end="")
+        for i in range(self.number_of_item):
+            print(self.value_list[i], end=" ")
+        print()
+        print("Class list: ", end="")
+        for i in range(self.number_of_item):
+            print(self.class_list[i], end=" ")
+        print()
 
 
+# Thuat toan branch and bound
 class BranchAndBound:
     def __init__(self, problem: Problem):
         self.problem = problem
         self.sorted_item_list: list[Item] = []
         self.class_oder: list[list[int]] = [[] for _ in range(problem.number_of_class)]
         self.get_sorted_item_list()
-        '''
-                for i in range(problem.number_of_item):
-            print(i, end=" ")
-            self.sorted_item_list[i].print_item_info()
-        for i in range(problem.number_of_class):
-            print("Class:", i + 1, ":", self.class_oder[i])
-        '''
 
+    # Sap xep cac Item theo thu tu giam dan cua ti le ratio = vale/weight
     def get_sorted_item_list(self):
         max_weight = max(self.problem.initial_item_list, key=lambda item: item.weight).weight
         self.sorted_item_list = sorted(self.problem.initial_item_list, reverse=True,
-                                       key=lambda item: (item.ratio, max_weight - item.weight))
+                                       key=lambda item: (item.ratio, max_weight - item.weight)) # neu ti le ratio bang nhau thi sap xep Item giam dan theo weight
+        # Lay ra danh sach vi tri cac Item cua tung class trong list da sap xep
         for i in range(self.problem.number_of_item):
             self.class_oder[self.sorted_item_list[i].class_item-1].append(i)
 
+    # Tinh toan upperbound va cost cua 1 node va kiem tra xem 1 node co the pruned hay khong
     def check_node(self, node: Node, upper: int):
         if node.depth > -1:
-            if node.res[-1] == 1:
+            if node.res[-1] == 1:   # Neu ta chon vat dang xet
                 node.current_weight += self.sorted_item_list[node.depth].weight
                 node.current_value += self.sorted_item_list[node.depth].value
+            # Neu weight cua node hien tai lon hon capacity thi prun node do
             if node.current_weight > self.problem.capacity:
                 return False
         upper_bound = node.current_value
         weight = node.current_weight
         cost = upper_bound
-        tmp: list[int] = []
+        # Neu cac Item da xet (o do sau tu 0 den node.depth) chua xet day du tat ca cac class
         if len(node.active_class) < self.problem.number_of_class:
-            class_not_active = list(range(self.problem.number_of_class))
+            tmp: list[int] = []  # list danh dau vi tri cua cac vat do chon
+            class_not_active = list(range(self.problem.number_of_class))    # list danh dau cac class cua xet
             for i in range(len(node.active_class)):
                 class_not_active.remove(i)
+            # Uu tien them Item cua cac class chua duoc xet truoc
             for i in range(node.depth+1, self.problem.number_of_item):
                 if len(class_not_active) == 0:
                     break
@@ -109,6 +131,8 @@ class BranchAndBound:
                     cost = upper_bound
                     class_not_active.remove(self.sorted_item_list[i].class_item - 1)
                     tmp.append(i)
+            # Sau khi xet du cac class  ma van con du weight thi tiep tuc them cac Item
+            # chua duoc xet theo thu tu trong sorted_item_list
             if weight < self.problem.capacity:
                 for i in range(node.depth + 1, self.problem.number_of_item):
                     if i in tmp:
@@ -120,7 +144,8 @@ class BranchAndBound:
                         break
                     upper_bound += self.sorted_item_list[i].value
                     cost = upper_bound
-        else:
+        else:  # Neu cac Item da xet (o do sau tu 0 den node.depth) da xet day du tat ca cac class
+            # Them cac Item chua duoc xet theo thu tu trong sorted_item_list
             for i in range(node.depth + 1, self.problem.number_of_item):
                 weight += self.sorted_item_list[i].weight
                 if weight > self.problem.capacity:
@@ -129,49 +154,54 @@ class BranchAndBound:
                     break
                 upper_bound += self.sorted_item_list[i].value
                 cost = upper_bound
-        node.upper, node.cost = -upper_bound, -cost
-        if -cost > upper:
+        node.upper, node.cost = -upper_bound, -cost  # Luu lai cost va upper_bound o dang so am
+        if -cost > upper:   # Kiem tra xem abs(cost) < abs(upper) hay khong, neu co thi prun node do
             return False
         return True
 
+    # Giai quyet bai toan bang thuat toan branch and bound
     def solve_problem(self):
         initial_state = Node(-1, 0, 0, [], [])
-        upper = 100
+        upper = 100000
         self.check_node(initial_state, upper)
         upper = initial_state.upper
-        my_queue: list[Node] = []
-        max_val = 0
-        max_item: list[int] = []
+        my_queue: list[Node] = []   # chua cac node theo thu tu giam dan cua cost
+        max_val = 0  # Luu lai solution tot nhat
+        max_item: list[int] = []    # Luu lai solution tot nhat
         heapq.heappush(my_queue, initial_state)
-        k = 0
         while True:
-            k += 1
             if len(my_queue) == 0:
                 break
             curr: Node = heapq.heappop(my_queue)
-            if curr.depth == self.problem.number_of_item - 1:
+            if curr.depth == self.problem.number_of_item - 1:   # Neu Node curr da xet xet tat ca cac vat
+                # Neu node curr chon day du tat cac cac class va solution node curr dua ra
+                # tot hon solution dang luu thi luu lai solution cua node curr
                 if curr.current_value > max_val and len(curr.active_class) == self.problem.number_of_class:
                     max_val = curr.current_value
                     max_item = curr.res.copy()
                 continue
-            tmp1 = curr.res.copy()
-            tmp2 = curr.res.copy()
-            tmp3 = curr.active_class.copy()
-            tmp4 = curr.active_class.copy()
-            tmp1.append(1)
+            tmp1 = curr.res.copy()  # mang luu cac item da xet cua node curr
+            tmp2 = curr.res.copy()  # mang luu cac item da xet cua node curr
+            tmp3 = curr.active_class.copy()  # mang luu cac class da xet cua node curr
+            tmp4 = curr.active_class.copy()  # mang luu cac class da xet cua node curr
+            tmp1.append(1)  # xet chon vat o curr.depth + 1
+            tmp2.append(0)  # xet khong chon vat o curr.depth + 1
+            # xet xem class cua Item dang xet co duoc xet trong node curr hay chua,
+            # Neu chua thi them vao cho node con lay item do
             if self.sorted_item_list[curr.depth + 1].class_item - 1 not in tmp3:
                 tmp3.append(self.sorted_item_list[curr.depth + 1].class_item - 1)
-            tmp2.append(0)
-            node1 = Node(curr.depth + 1, curr.current_weight, curr.current_value, tmp1, tmp3)
-            node2 = Node(curr.depth + 1, curr.current_weight, curr.current_value, tmp2, tmp4)
-            l: list[Node] = []
+            node1 = Node(curr.depth + 1, curr.current_weight, curr.current_value, tmp1, tmp3)  # Node con co lay Item
+            node2 = Node(curr.depth + 1, curr.current_weight, curr.current_value, tmp2, tmp4)  # Node con khong lay Item
+            l: list[Node] = []  # Mang luu lai node con khong bi pruned
             if self.check_node(node1, upper):
                 l.append(node1)
             if self.check_node(node2, upper):
                 l.append(node2)
             for c in l:
-                heapq.heappush(my_queue, c)
+                heapq.heappush(my_queue, c)  # Them cac node con khong bi pruned vao my_queue
             for c in l:
+                # Trong cac node con, neu co upper lon hon upper toan cuc thi luu lai upper toan cuc
+                # Va prune di nhung node co cost > upper toan cuc vua thay doi do
                 if c.upper < upper and len(c.active_class) == self.problem.number_of_class:
                     upper = c.upper
                     i = 0
@@ -181,16 +211,13 @@ class BranchAndBound:
                             continue
                         i += 1
             del curr
-        if len(max_item) == 0:
+        if len(max_item) == 0:  # Neu mang solution ra ve rong thi bai toan khong co loi giai
             print("No solution!")
             return
-        print(max_val)
-        res = 0
+        print(max_val)  # Nguoc lai tra ve solution
         for i in range(0, len(self.sorted_item_list)):
             self.sorted_item_list[i].state = max_item[i]
-            if max_item[i] == 1:
-                res += self.sorted_item_list[i].weight
-        print(res)
+        return max_val
 
 
 class BruteForce:
@@ -328,31 +355,6 @@ class GeneticAlgorithm:
             print("No solution!")
 
 
-def generate_test_case(capacity: int, number_of_class: int, number_of_item: int):
-    test_file = "testcase6.txt"
-    with open(test_file, 'w') as file:
-        file.write(str(capacity)+"\n")
-        file.write(str(number_of_class)+"\n")
-        for k in range(number_of_item):
-            if k == number_of_item-1:
-                file.write(str(random.randint(1, 50)))
-                file.write("\n")
-            else:
-                file.write(str(random.randint(1, 50)) + ", ")
-
-        for k in range(number_of_item):
-            if k == number_of_item-1:
-                file.write(str(random.randint(1, 100)))
-                file.write("\n")
-            else:
-                file.write(str(random.randint(1, 100)) + ", ")
-        for k in range(number_of_item):
-            if k == number_of_item-1:
-                file.write(str(random.randint(1, number_of_class)))
-            else:
-                file.write(str(random.randint(1, number_of_class)) + ", ")
-
-
 class local_beam_search:
     def __init__(self, problem, k, times):
         self.problem = problem
@@ -485,42 +487,67 @@ class local_beam_search:
         return None
 
 
-if __name__ == '__main__':
-    input_file_txt = "testcase2.txt"
-    #generate_test_case(1000, 5, 50)
-    # input_file_txt = "input1.txt"
-    p = Problem(input_file_txt)
-    print("1/Brute Force\n2/Branch And Bound\n3/Local Beam\n4/Genetic Algorithm")
-    option = int(input(
-        "Enter number to choose algorithms: "))
-    s = ""
-    start = time.time()
-    if option == 2:
-        tracemalloc.start()
-        search = BranchAndBound(p)
-        search.solve_problem()
-        tracemalloc.stop()
-    elif option == 1:
-        tracemalloc.start()
-        search = BruteForce(p)
-        search.solve_problem()
-        tracemalloc.stop()
-    elif option == 3:
-        tracemalloc.start()
-        search = local_beam_search(p, 2, 80)
-        tracemalloc.stop()
-    elif option == 4:
-        tracemalloc.start()
-        search = GeneticAlgorithm(p)
-        search.solve_problem()
-        tracemalloc.stop()
-    end = time.time()
-    for i in range(len(p.initial_item_list)):
-        if len(p.initial_item_list) - 1 == i:
-            s += str(p.initial_item_list[i].state)
-        else:
-            s += str(p.initial_item_list[i].state) + ", "
-    print(s)
-    print("Time: ", (end - start)*1000, "ms")
-    print("Memory: ", tracemalloc.get_tracemalloc_memory()/1024, "KB")
+def generate_test_case(capacity: int, number_of_class: int, number_of_item: int):
+    test_file = "testcase12.txt"
+    with open(test_file, 'w') as file:
+        file.write(str(capacity)+"\n")
+        file.write(str(number_of_class)+"\n")
+        for k in range(number_of_item):
+            if k == number_of_item-1:
+                file.write(str(random.randint(1, 50)))
+                file.write("\n")
+            else:
+                file.write(str(random.randint(1, 50)) + ", ")
 
+        for k in range(number_of_item):
+            if k == number_of_item-1:
+                file.write(str(random.randint(1, 100)))
+                file.write("\n")
+            else:
+                file.write(str(random.randint(1, 100)) + ", ")
+        for k in range(number_of_item):
+            if k == number_of_item-1:
+                file.write(str(random.randint(1, number_of_class)))
+            else:
+                file.write(str(random.randint(1, number_of_class)) + ", ")
+
+
+if __name__ == '__main__':
+    input_file_txt = "INPUT_2.txt"
+    p = Problem(input_file_txt)
+    p.print_problem_info()
+    while True:
+        print("______________________________________________________________________________")
+        print("1/Brute Force\n2/Branch And Bound\n3/Local Beam\n4/Genetic Algorithm\n5/Stop")
+        option = int(input(
+            "Enter your choice: "))
+        s = ""
+        start = time.time()
+        tracemalloc.start()
+        if option == 5:
+            print("Thank you for watching <3")
+            break
+        elif option == 2:
+            search = BranchAndBound(p)
+            search.solve_problem()
+        elif option == 1:
+            tracemalloc.start()
+            search = BruteForce(p)
+            search.solve_problem()
+        elif option == 3:
+            tracemalloc.start()
+            search = local_beam_search(p, 2, 10)
+        elif option == 4:
+            tracemalloc.start()
+            search = GeneticAlgorithm(p)
+            search.solve_problem()
+        end = time.time()
+        for i in range(len(p.initial_item_list)):
+            if len(p.initial_item_list) - 1 == i:
+                s += str(p.initial_item_list[i].state)
+            else:
+                s += str(p.initial_item_list[i].state) + ", "
+        print(s)
+        print("Time: ", (end - start) * 1000, "ms")
+        print("Memory: ", tracemalloc.get_tracemalloc_memory() / 1024, "KB")
+        tracemalloc.stop()
